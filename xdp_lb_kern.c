@@ -34,8 +34,12 @@ int xdp_load_balancer(struct xdp_md *ctx)
     if (iph->saddr == IP_ADDRESS(CLIENT))
     {
         char be = BACKEND_A;
-        if (bpf_ktime_get_ns() % 2)
-            be = BACKEND_B;
+
+        struct tcphdr *tcph = (struct tcphdr *)(iph + 1);
+        if ((void *)(tcph + 1) <= data_end) {
+            if (tcph->source % 2)
+               be = BACKEND_B;
+        }
 
         iph->daddr = IP_ADDRESS(be);
         eth->h_dest[5] = be;
